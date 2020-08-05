@@ -11,11 +11,14 @@ open import Data.Empty
 open import Data.Product
 open import Level renaming (suc to lsuc)
 
+-- Open dyadic interval
+
 data D : Set where
   mid : D
   l : D → D
   r : D → D
 
+-- Halving and midpoint operation
 infix 10 _/2
 _/2 : D → D
 mid /2 = mid
@@ -32,51 +35,7 @@ r x ⊕ mid = r x /2
 r x ⊕ l y = (x ⊕ y) /2
 r x ⊕ r y = r (x ⊕ y)
 
-nameGoesHere : D -> Set
-nameGoesHere mid = ⊤
-nameGoesHere (l mid) = ⊤
-nameGoesHere (l (l x)) = ⊥
-nameGoesHere (l (r x)) = ⊤
-nameGoesHere (r mid) = ⊤
-nameGoesHere (r (r x)) = ⊥
-nameGoesHere (r (l x)) = ⊤
-
-nameGoesHereHalfLem : ∀ x → nameGoesHere (x /2)
-nameGoesHereHalfLem mid = tt
-nameGoesHereHalfLem (l x) = tt
-nameGoesHereHalfLem (r x) = tt
-
-nameGoesHereLemma : ∀ x y → nameGoesHere x → nameGoesHere y → nameGoesHere (x ⊕ y)
-nameGoesHereLemma mid y pf1 pf2 = nameGoesHereHalfLem y
-nameGoesHereLemma (l x) mid pf1 pf2 = tt
-nameGoesHereLemma (l mid) (l mid) pf1 pf2 = tt
-nameGoesHereLemma (l mid) (l (r y)) pf1 pf2 = tt
-nameGoesHereLemma (l (r x)) (l mid) pf1 pf2 = tt
-nameGoesHereLemma (l (r x)) (l (r y)) pf1 pf2 = tt
-nameGoesHereLemma (l x) (r y) pf1 pf2 = nameGoesHereHalfLem (x ⊕ y)
-nameGoesHereLemma (r x) mid pf1 pf2 = tt
-nameGoesHereLemma (r x) (l y) pf1 pf2 = nameGoesHereHalfLem (x ⊕ y)
-nameGoesHereLemma (r mid) (r mid) pf1 pf2 = tt
-nameGoesHereLemma (r mid) (r (l y)) pf1 pf2 = tt
-nameGoesHereLemma (r (l x)) (r mid) pf1 pf2 = tt
-nameGoesHereLemma (r (l x)) (r (l y)) pf1 pf2 = tt
-
-D′ : Set
-D′ = Σ D nameGoesHere
-
-infix 8 _⊕′_
-_⊕′_ : D′ → D′ → D′
-(x , xpf) ⊕′ (y , ypf) = (x ⊕ y) , (nameGoesHereLemma x y xpf ypf)
-
-nameGoesHereProp : ∀ x → (pf1 pf2 : nameGoesHere x) → pf1 ≡ pf2
-nameGoesHereProp mid pf1 pf2 = refl
-nameGoesHereProp (l mid) pf1 pf2 = refl
-nameGoesHereProp (l (r x)) pf1 pf2 = refl
-nameGoesHereProp (r mid) pf1 pf2 = refl
-nameGoesHereProp (r (l x)) pf1 pf2 = refl
-
-primeEqLemma : (x y : D′) → proj₁ x ≡ proj₁ y → x ≡ y
-primeEqLemma (x , xpf) (.x , ypf) refl rewrite nameGoesHereProp x xpf ypf = refl
+-- Midpoint properties for D
 
 l-eq-lem : ∀ x y → l x ≡ l y → x ≡ y
 l-eq-lem x .x refl = refl
@@ -320,6 +279,63 @@ assocr (r x) (r y) (r z) = cong r (assocr x y z)
         l (a ⊕ c) ⊕ (l b ⊕ l d) ≡⟨⟩
         l ((a ⊕ c) ⊕ (b ⊕ d)) ∎
 
+-- To define the closed dyadics we do the following:
+-- Take the open dyadics which look like
+-- (------|------)
+-- And we carve off the edges to get
+-- ---[---|---]---
+
+notCarved : D -> Set
+notCarved mid = ⊤
+notCarved (l mid) = ⊤
+notCarved (l (l x)) = ⊥
+notCarved (l (r x)) = ⊤
+notCarved (r mid) = ⊤
+notCarved (r (r x)) = ⊥
+notCarved (r (l x)) = ⊤
+
+notCarvedHalfLem : ∀ x → notCarved (x /2)
+notCarvedHalfLem mid = tt
+notCarvedHalfLem (l x) = tt
+notCarvedHalfLem (r x) = tt
+
+notCarvedLemma : ∀ x y → notCarved x → notCarved y → notCarved (x ⊕ y)
+notCarvedLemma mid y pf1 pf2 = notCarvedHalfLem y
+notCarvedLemma (l x) mid pf1 pf2 = tt
+notCarvedLemma (l mid) (l mid) pf1 pf2 = tt
+notCarvedLemma (l mid) (l (r y)) pf1 pf2 = tt
+notCarvedLemma (l (r x)) (l mid) pf1 pf2 = tt
+notCarvedLemma (l (r x)) (l (r y)) pf1 pf2 = tt
+notCarvedLemma (l x) (r y) pf1 pf2 = notCarvedHalfLem (x ⊕ y)
+notCarvedLemma (r x) mid pf1 pf2 = tt
+notCarvedLemma (r x) (l y) pf1 pf2 = notCarvedHalfLem (x ⊕ y)
+notCarvedLemma (r mid) (r mid) pf1 pf2 = tt
+notCarvedLemma (r mid) (r (l y)) pf1 pf2 = tt
+notCarvedLemma (r (l x)) (r mid) pf1 pf2 = tt
+notCarvedLemma (r (l x)) (r (l y)) pf1 pf2 = tt
+
+-- D′ is the closed dyadics, i.e. all the dyadics that are not carved
+D′ : Set
+D′ = Σ D notCarved
+
+-- Midpoint respects being not carved
+infix 8 _⊕′_
+_⊕′_ : D′ → D′ → D′
+(x , xpf) ⊕′ (y , ypf) = (x ⊕ y) , (notCarvedLemma x y xpf ypf)
+
+-- Not being carved is a prop
+notCarvedProp : ∀ x → (pf1 pf2 : notCarved x) → pf1 ≡ pf2
+notCarvedProp mid pf1 pf2 = refl
+notCarvedProp (l mid) pf1 pf2 = refl
+notCarvedProp (l (r x)) pf1 pf2 = refl
+notCarvedProp (r mid) pf1 pf2 = refl
+notCarvedProp (r (l x)) pf1 pf2 = refl
+
+-- And so equality between elements of D′ is determined by equality of the underlying elements of D
+primeEqLemma : (x y : D′) → proj₁ x ≡ proj₁ y → x ≡ y
+primeEqLemma (x , xpf) (.x , ypf) refl rewrite notCarvedProp x xpf ypf = refl
+
+-- Transport the midpoint properties
 ⊕′-comm : ∀ x y → x ⊕′ y ≡ y ⊕′ x
 ⊕′-comm x y = primeEqLemma (x ⊕′ y) (y ⊕′ x) (⊕-comm (proj₁ x) (proj₁ y))
 
@@ -329,12 +345,14 @@ assocr (r x) (r y) (r z) = cong r (assocr x y z)
 ⊕′-trans : ∀ a b c d → (a ⊕′ b) ⊕′ (c ⊕′ d) ≡ (a ⊕′ c) ⊕′ (b ⊕′ d)
 ⊕′-trans a b c d = primeEqLemma ((a ⊕′ b) ⊕′ (c ⊕′ d)) ((a ⊕′ c) ⊕′ (b ⊕′ d)) (⊕-trans (proj₁ a) (proj₁ b) (proj₁ c) (proj₁ d))
 
+-- D′ has actual endpoints
 end-left : D′
 end-left = (l mid) , tt
 
 end-right : D′
 end-right = (r mid) , tt
 
+-- Store the data for a binary system in a record
 record BinarySystem (a : Level) : Set (lsuc a) where
   field
     Carrier : Set a
@@ -346,16 +364,18 @@ record BinarySystem (a : Level) : Set (lsuc a) where
 
 open BinarySystem
 
-D′-is-binary-system : BinarySystem 0ℓ
-D′-is-binary-system .Carrier = D′
-D′-is-binary-system .el = end-left
-D′-is-binary-system .er = end-right
-D′-is-binary-system .left = _⊕′ end-left
-D′-is-binary-system .right = _⊕′ end-right
-D′-is-binary-system .leftel = ⊕′-idem (end-left)
-D′-is-binary-system .righter = ⊕′-idem (end-right)
-D′-is-binary-system .centereq = ⊕′-comm end-left end-right
+-- D′ is a binary system as we wanted
+D′-is-bs : BinarySystem 0ℓ
+D′-is-bs .Carrier = D′
+D′-is-bs .el = end-left
+D′-is-bs .er = end-right
+D′-is-bs .left = _⊕′ end-left
+D′-is-bs .right = _⊕′ end-right
+D′-is-bs .leftel = ⊕′-idem (end-left)
+D′-is-bs .righter = ⊕′-idem (end-right)
+D′-is-bs .centereq = ⊕′-comm end-left end-right
 
+-- Also store homomorphisms as a record
 record BinarySystemHom {a b} (A : BinarySystem a) (B : BinarySystem b) : Set (lsuc (a ⊔ b)) where
   field
     func : Carrier A → Carrier B
@@ -366,6 +386,7 @@ record BinarySystemHom {a b} (A : BinarySystem a) (B : BinarySystem b) : Set (ls
 
 open BinarySystemHom
 
+-- Further have a record for structures "like" D which have a central object and left and right maps
 record OpenBinarySystem (a : Level) : Set (lsuc a) where
   field
     CarrierO : Set a
@@ -374,12 +395,14 @@ record OpenBinarySystem (a : Level) : Set (lsuc a) where
 
 open OpenBinarySystem
 
-D-is-open-binary-system : OpenBinarySystem 0ℓ
-D-is-open-binary-system .CarrierO = D
-D-is-open-binary-system .c = mid
-D-is-open-binary-system .leftO = l
-D-is-open-binary-system .rightO = r
+-- D is the obvious example of this
+D-is-obs : OpenBinarySystem 0ℓ
+D-is-obs .CarrierO = D
+D-is-obs .c = mid
+D-is-obs .leftO = l
+D-is-obs .rightO = r
 
+-- We also have maps between these
 record OpenBinarySystemHom {a b} (A : OpenBinarySystem a) (B : OpenBinarySystem b) : Set (lsuc (a ⊔ b)) where
   field
     funcO : CarrierO A → CarrierO B
@@ -389,13 +412,28 @@ record OpenBinarySystemHom {a b} (A : OpenBinarySystem a) (B : OpenBinarySystem 
 
 open OpenBinarySystemHom
 
-binary-system-is-open-binary-system : ∀ {b} → BinarySystem b → OpenBinarySystem b
-binary-system-is-open-binary-system B .CarrierO = Carrier B
-binary-system-is-open-binary-system B .c = right B (el B)
-binary-system-is-open-binary-system B .leftO = left B
-binary-system-is-open-binary-system B .rightO = right B
+-- Any binary system is an open-binary-system
+bs-is-obs : ∀ {b} → BinarySystem b → OpenBinarySystem b
+bs-is-obs B .CarrierO = Carrier B
+bs-is-obs B .c = right B (el B)
+bs-is-obs B .leftO = left B
+bs-is-obs B .rightO = right B
 
-at-most-one-open-hom : ∀ {b} → (B : OpenBinarySystem b) → (f g : OpenBinarySystemHom D-is-open-binary-system B) → ∀ x → funcO f x ≡ funcO g x
+-- We can embed D into any binary system
+embedD : ∀ {b} → (B : OpenBinarySystem b) → D → CarrierO B
+embedD B mid = c B
+embedD B (l x) = leftO B (embedD B x)
+embedD B (r x) = rightO B (embedD B x)
+
+-- And show this is a homomorphism
+embedD-is-hom : ∀ {b} → (B : OpenBinarySystem b) → OpenBinarySystemHom D-is-obs B
+embedD-is-hom B .funcO = embedD B
+embedD-is-hom B .c-hom = refl
+embedD-is-hom B .left-homO x = refl
+embedD-is-hom B .right-homO x = refl
+
+-- And further that D is the initial open binary system
+at-most-one-open-hom : ∀ {b} → (B : OpenBinarySystem b) → (f g : OpenBinarySystemHom D-is-obs B) → ∀ x → funcO f x ≡ funcO g x
 at-most-one-open-hom B f g mid =
   funcO f mid ≡⟨ c-hom f ⟩
   c B ≡˘⟨ c-hom g ⟩
@@ -411,48 +449,13 @@ at-most-one-open-hom B f g (r x) =
   rightO B (funcO g x) ≡˘⟨ right-homO g x ⟩
   funcO g (r x) ∎
 
-embedD : ∀ {b} → (B : OpenBinarySystem b) → D → CarrierO B
-embedD B mid = c B
-embedD B (l x) = leftO B (embedD B x)
-embedD B (r x) = rightO B (embedD B x)
-
-D′-open-hom : ∀ {b} → (B : BinarySystem b) → (f : BinarySystemHom D′-is-binary-system B) → OpenBinarySystemHom D-is-open-binary-system (binary-system-is-open-binary-system B)
-D′-open-hom B f .funcO x = func f ((x /2) , (nameGoesHereHalfLem x))
-D′-open-hom B f .c-hom =
-  func f (end-left ⊕′ end-right) ≡⟨ right-hom f end-left ⟩
-  right B (func f end-left) ≡⟨ cong (right B) (left-end-hom f) ⟩
-  right B (el B) ∎
-D′-open-hom B f .left-homO mid = left-hom f (mid , tt)
-D′-open-hom B f .left-homO (l x) = left-hom f (l (r x) , tt)
-D′-open-hom B f .left-homO (r x) = left-hom f (r (l x) , tt)
-D′-open-hom B f .right-homO mid = right-hom f (mid , tt)
-D′-open-hom B f .right-homO (l x) = right-hom f (l (r x) , tt)
-D′-open-hom B f .right-homO (r x) = right-hom f (r (l x) , tt)
-
-at-most-one-hom : ∀ {b} → (B : BinarySystem b) → (f g : BinarySystemHom D′-is-binary-system B) → ∀ x → func f x ≡ func g x
-at-most-one-hom B f g (mid , tt) =
-  func f (end-left ⊕′ end-right) ≡⟨ right-hom f end-left ⟩
-  right B (func f end-left) ≡⟨ cong (right B) (left-end-hom f) ⟩
-  right B (el B) ≡˘⟨ cong (right B) (left-end-hom g) ⟩
-  right B (func g end-left) ≡˘⟨ right-hom g end-left ⟩
-  func g (end-left ⊕′ end-right) ∎
-at-most-one-hom B f g (l mid , tt) =
-  func f end-left ≡⟨ left-end-hom f ⟩
-  el B ≡˘⟨ left-end-hom g ⟩
-  func g end-left ∎
-at-most-one-hom B f g (l (r x) , tt) = at-most-one-open-hom (binary-system-is-open-binary-system B) (D′-open-hom B f) (D′-open-hom B g) (l x)
-at-most-one-hom B f g (r mid , tt) =
-  func f end-right ≡⟨ right-end-hom f ⟩
-  er B ≡˘⟨ right-end-hom g ⟩
-  func g end-right ∎
-at-most-one-hom B f g (r (l x) , tt) = at-most-one-open-hom (binary-system-is-open-binary-system B) (D′-open-hom B f) (D′-open-hom B g) (r x)
-
+-- We can also show that D′ embeds into any binary system
 embedD′ : ∀ {b} → (B : BinarySystem b) → D′ → Carrier B
 embedD′ B (mid , tt) = right B (el B)
 embedD′ B (l mid , tt) = el B
-embedD′ B (l (r x) , tt) = left B (embedD (binary-system-is-open-binary-system B) x)
+embedD′ B (l (r x) , tt) = left B (embedD (bs-is-obs B) x)
 embedD′ B (r mid , tt) = er B
-embedD′ B (r (l x) , tt) = right B (embedD (binary-system-is-open-binary-system B) x)
+embedD′ B (r (l x) , tt) = right B (embedD (bs-is-obs B) x)
 
 embedD′-left-hom : ∀ {b} → (B : BinarySystem b) → ∀ x → embedD′ B (x ⊕′ end-left) ≡ left B (embedD′ B x)
 embedD′-left-hom B (mid , tt) = refl
@@ -468,9 +471,54 @@ embedD′-right-hom B (l (r x) , tt) = refl
 embedD′-right-hom B (r mid , tt) = righter B
 embedD′-right-hom B (r (l x) , tt) = refl
 
-exists-hom : ∀ {b} → (B : BinarySystem b) → BinarySystemHom D′-is-binary-system B
+exists-hom : ∀ {b} → (B : BinarySystem b) → BinarySystemHom D′-is-bs B
 exists-hom B .func = embedD′ B
 exists-hom B .left-end-hom = refl
 exists-hom B .right-end-hom = refl
 exists-hom B .left-hom = embedD′-left-hom B
 exists-hom B .right-hom = embedD′-right-hom B
+
+-- We now notice that D′ contains a copy of D that has been shrunk
+-- This can be used to get a morphism from D to a Binary system from a
+-- morphism from D′ to that binary system. We do this by halfing the
+-- element of D and then passing it through the original function
+
+D′-open-hom : ∀ {b} →
+              (B : BinarySystem b) →
+              (f : BinarySystemHom D′-is-bs B) →
+              OpenBinarySystemHom D-is-obs (bs-is-obs B)
+D′-open-hom B f .funcO x = func f ((x /2) , (notCarvedHalfLem x))
+D′-open-hom B f .c-hom =
+  func f (end-left ⊕′ end-right) ≡⟨ right-hom f end-left ⟩
+  right B (func f end-left) ≡⟨ cong (right B) (left-end-hom f) ⟩
+  right B (el B) ∎
+D′-open-hom B f .left-homO mid = left-hom f (mid , tt)
+D′-open-hom B f .left-homO (l x) = left-hom f (l (r x) , tt)
+D′-open-hom B f .left-homO (r x) = left-hom f (r (l x) , tt)
+D′-open-hom B f .right-homO mid = right-hom f (mid , tt)
+D′-open-hom B f .right-homO (l x) = right-hom f (l (r x) , tt)
+D′-open-hom B f .right-homO (r x) = right-hom f (r (l x) , tt)
+
+-- This can be shown that D′ is initial by reusing the proof that D is initial
+at-most-one-hom : ∀ {b} →
+                  (B : BinarySystem b) →
+                  (f g : BinarySystemHom D′-is-bs B) →
+                  ∀ x → func f x ≡ func g x
+at-most-one-hom B f g (mid , tt) =
+  func f (end-left ⊕′ end-right) ≡⟨ right-hom f end-left ⟩
+  right B (func f end-left) ≡⟨ cong (right B) (left-end-hom f) ⟩
+  right B (el B) ≡˘⟨ cong (right B) (left-end-hom g) ⟩
+  right B (func g end-left) ≡˘⟨ right-hom g end-left ⟩
+  func g (end-left ⊕′ end-right) ∎
+at-most-one-hom B f g (l mid , tt) =
+  func f end-left ≡⟨ left-end-hom f ⟩
+  el B ≡˘⟨ left-end-hom g ⟩
+  func g end-left ∎
+at-most-one-hom B f g (l (r x) , tt) =
+  at-most-one-open-hom (bs-is-obs B) (D′-open-hom B f) (D′-open-hom B g) (l x)
+at-most-one-hom B f g (r mid , tt) =
+  func f end-right ≡⟨ right-end-hom f ⟩
+  er B ≡˘⟨ right-end-hom g ⟩
+  func g end-right ∎
+at-most-one-hom B f g (r (l x) , tt) =
+  at-most-one-open-hom (bs-is-obs B) (D′-open-hom B f) (D′-open-hom B g) (r x)
