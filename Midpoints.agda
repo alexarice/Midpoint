@@ -282,7 +282,7 @@ assocr (r x) (r y) (r z) = cong r (assocr x y z)
 -- To define the closed dyadics we do the following:
 -- Take the open dyadics which look like
 -- (------|------)
--- And we cut off the edges to get
+-- And we cut off the outer parts to get
 -- ---[---|---]---
 
 inSubInterval : D -> Set
