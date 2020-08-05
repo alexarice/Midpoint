@@ -282,58 +282,58 @@ assocr (r x) (r y) (r z) = cong r (assocr x y z)
 -- To define the closed dyadics we do the following:
 -- Take the open dyadics which look like
 -- (------|------)
--- And we cut off the outer parts to get
+-- And we carve off the outer parts to get
 -- ---[---|---]---
 
-inSubInterval : D -> Set
-inSubInterval mid = ⊤
-inSubInterval (l mid) = ⊤
-inSubInterval (l (l x)) = ⊥
-inSubInterval (l (r x)) = ⊤
-inSubInterval (r mid) = ⊤
-inSubInterval (r (r x)) = ⊥
-inSubInterval (r (l x)) = ⊤
+inSubinterval : D -> Set
+inSubinterval mid = ⊤
+inSubinterval (l mid) = ⊤
+inSubinterval (l (l x)) = ⊥
+inSubinterval (l (r x)) = ⊤
+inSubinterval (r mid) = ⊤
+inSubinterval (r (r x)) = ⊥
+inSubinterval (r (l x)) = ⊤
 
-inSubIntervalHalfLem : ∀ x → inSubInterval (x /2)
-inSubIntervalHalfLem mid = tt
-inSubIntervalHalfLem (l x) = tt
-inSubIntervalHalfLem (r x) = tt
+inSubintervalHalfLem : ∀ x → inSubinterval (x /2)
+inSubintervalHalfLem mid = tt
+inSubintervalHalfLem (l x) = tt
+inSubintervalHalfLem (r x) = tt
 
-inSubIntervalLemma : ∀ x y → inSubInterval x → inSubInterval y → inSubInterval (x ⊕ y)
-inSubIntervalLemma mid y pf1 pf2 = inSubIntervalHalfLem y
-inSubIntervalLemma (l x) mid pf1 pf2 = tt
-inSubIntervalLemma (l mid) (l mid) pf1 pf2 = tt
-inSubIntervalLemma (l mid) (l (r y)) pf1 pf2 = tt
-inSubIntervalLemma (l (r x)) (l mid) pf1 pf2 = tt
-inSubIntervalLemma (l (r x)) (l (r y)) pf1 pf2 = tt
-inSubIntervalLemma (l x) (r y) pf1 pf2 = inSubIntervalHalfLem (x ⊕ y)
-inSubIntervalLemma (r x) mid pf1 pf2 = tt
-inSubIntervalLemma (r x) (l y) pf1 pf2 = inSubIntervalHalfLem (x ⊕ y)
-inSubIntervalLemma (r mid) (r mid) pf1 pf2 = tt
-inSubIntervalLemma (r mid) (r (l y)) pf1 pf2 = tt
-inSubIntervalLemma (r (l x)) (r mid) pf1 pf2 = tt
-inSubIntervalLemma (r (l x)) (r (l y)) pf1 pf2 = tt
+inSubintervalLemma : ∀ x y → inSubinterval x → inSubinterval y → inSubinterval (x ⊕ y)
+inSubintervalLemma mid y pf1 pf2 = inSubintervalHalfLem y
+inSubintervalLemma (l x) mid pf1 pf2 = tt
+inSubintervalLemma (l mid) (l mid) pf1 pf2 = tt
+inSubintervalLemma (l mid) (l (r y)) pf1 pf2 = tt
+inSubintervalLemma (l (r x)) (l mid) pf1 pf2 = tt
+inSubintervalLemma (l (r x)) (l (r y)) pf1 pf2 = tt
+inSubintervalLemma (l x) (r y) pf1 pf2 = inSubintervalHalfLem (x ⊕ y)
+inSubintervalLemma (r x) mid pf1 pf2 = tt
+inSubintervalLemma (r x) (l y) pf1 pf2 = inSubintervalHalfLem (x ⊕ y)
+inSubintervalLemma (r mid) (r mid) pf1 pf2 = tt
+inSubintervalLemma (r mid) (r (l y)) pf1 pf2 = tt
+inSubintervalLemma (r (l x)) (r mid) pf1 pf2 = tt
+inSubintervalLemma (r (l x)) (r (l y)) pf1 pf2 = tt
 
--- D′ is the closed dyadics, i.e. all the dyadics that are not carved
+-- D′ is the closed dyadics, i.e. all the dyadics that are in the subinterval
 D′ : Set
-D′ = Σ D inSubInterval
+D′ = Σ D inSubinterval
 
--- Midpoint respects being not carved
+-- Midpoint respects being in the subinterval
 infix 8 _⊕′_
 _⊕′_ : D′ → D′ → D′
-(x , xpf) ⊕′ (y , ypf) = (x ⊕ y) , (inSubIntervalLemma x y xpf ypf)
+(x , xpf) ⊕′ (y , ypf) = (x ⊕ y) , (inSubintervalLemma x y xpf ypf)
 
--- Not being carved is a prop
-inSubIntervalProp : ∀ x → (pf1 pf2 : inSubInterval x) → pf1 ≡ pf2
-inSubIntervalProp mid pf1 pf2 = refl
-inSubIntervalProp (l mid) pf1 pf2 = refl
-inSubIntervalProp (l (r x)) pf1 pf2 = refl
-inSubIntervalProp (r mid) pf1 pf2 = refl
-inSubIntervalProp (r (l x)) pf1 pf2 = refl
+-- being in the subinterval is a prop
+inSubintervalProp : ∀ x → (pf1 pf2 : inSubinterval x) → pf1 ≡ pf2
+inSubintervalProp mid pf1 pf2 = refl
+inSubintervalProp (l mid) pf1 pf2 = refl
+inSubintervalProp (l (r x)) pf1 pf2 = refl
+inSubintervalProp (r mid) pf1 pf2 = refl
+inSubintervalProp (r (l x)) pf1 pf2 = refl
 
 -- And so equality between elements of D′ is determined by equality of the underlying elements of D
 primeEqLemma : (x y : D′) → proj₁ x ≡ proj₁ y → x ≡ y
-primeEqLemma (x , xpf) (.x , ypf) refl rewrite inSubIntervalProp x xpf ypf = refl
+primeEqLemma (x , xpf) (.x , ypf) refl rewrite inSubintervalProp x xpf ypf = refl
 
 -- Transport the midpoint properties
 ⊕′-comm : ∀ x y → x ⊕′ y ≡ y ⊕′ x
@@ -487,7 +487,7 @@ D′-open-hom : ∀ {b} →
               (B : BinarySystem b) →
               (f : BinarySystemHom D′-is-bs B) →
               OpenBinarySystemHom D-is-obs (bs-is-obs B)
-D′-open-hom B f .funcO x = func f ((x /2) , (inSubIntervalHalfLem x))
+D′-open-hom B f .funcO x = func f ((x /2) , (inSubintervalHalfLem x))
 D′-open-hom B f .c-hom =
   func f (end-left ⊕′ end-right) ≡⟨ right-hom f end-left ⟩
   right B (func f end-left) ≡⟨ cong (right B) (left-end-hom f) ⟩
