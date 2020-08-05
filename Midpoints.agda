@@ -374,19 +374,6 @@ record OpenBinarySystem (a : Level) : Set (lsuc a) where
 
 open OpenBinarySystem
 
-
-left-OBS : ∀ {b} → (OpenBinarySystem b) → OpenBinarySystem b
-left-OBS B .CarrierO = CarrierO B
-left-OBS B .c = leftO B (c B)
-left-OBS B .leftO = leftO B
-left-OBS B .rightO = rightO B
-
-right-OBS : ∀ {b} → (OpenBinarySystem b) → OpenBinarySystem b
-right-OBS B .CarrierO = CarrierO B
-right-OBS B .c = rightO B (c B)
-right-OBS B .leftO = leftO B
-right-OBS B .rightO = rightO B
-
 D-is-open-binary-system : OpenBinarySystem 0ℓ
 D-is-open-binary-system .CarrierO = D
 D-is-open-binary-system .c = mid
