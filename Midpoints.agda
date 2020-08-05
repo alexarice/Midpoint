@@ -1,6 +1,6 @@
 {-# OPTIONS --safe --without-K --postfix-projections #-}
 
-module Test where
+module Midpoints where
 
 open import Relation.Binary.PropositionalEquality
 open ≡-Reasoning
