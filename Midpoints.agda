@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --without-K --postfix-projections #-}
+{-# OPTIONS --safe --without-K #-}
 
 module Midpoints where
 
@@ -352,6 +352,28 @@ end-left = (l mid) , tt
 end-right : D′
 end-right = (r mid) , tt
 
+-- Define what a bipointed midpoint algebra is
+
+record BiPointMidpointAlgebra (a : Level) : Set (lsuc a) where
+  field
+    CarrierM : Set a
+    mp : CarrierM → CarrierM → CarrierM
+    p1 p2 : CarrierM
+    bpm-idem : ∀ x → x ≡ mp x x
+    bpm-comm : ∀ x y → mp x y ≡ mp y x
+    bpm-trans : ∀ a b c d → mp (mp a b) (mp c d) ≡ mp (mp a c) (mp b d)
+
+open BiPointMidpointAlgebra
+
+D′-is-bpm : BiPointMidpointAlgebra 0ℓ
+D′-is-bpm .CarrierM = D′
+D′-is-bpm .mp = _⊕′_
+D′-is-bpm .p1 = end-left
+D′-is-bpm .p2 = end-right
+D′-is-bpm .bpm-idem = ⊕′-idem
+D′-is-bpm .bpm-comm = ⊕′-comm
+D′-is-bpm .bpm-trans = ⊕′-trans
+
 -- Store the data for a binary system in a record
 record BinarySystem (a : Level) : Set (lsuc a) where
   field
@@ -364,16 +386,32 @@ record BinarySystem (a : Level) : Set (lsuc a) where
 
 open BinarySystem
 
--- D′ is a binary system as we wanted
+-- Any bipointed midpoint algebra is a binary system
+
+bpm-is-bs : ∀ {a} → BiPointMidpointAlgebra a → BinarySystem a
+bpm-is-bs A .Carrier = CarrierM A
+bpm-is-bs A .el = p1 A
+bpm-is-bs A .er = p2 A
+bpm-is-bs A .left = mp A (p1 A)
+bpm-is-bs A .right = mp A (p2 A)
+bpm-is-bs A .leftel = bpm-idem A (p1 A)
+bpm-is-bs A .righter = bpm-idem A (p2 A)
+bpm-is-bs A .centereq = bpm-comm A (p2 A) (p1 A)
+
+-- So D′ is a binary system
 D′-is-bs : BinarySystem 0ℓ
-D′-is-bs .Carrier = D′
-D′-is-bs .el = end-left
-D′-is-bs .er = end-right
-D′-is-bs .left = _⊕′ end-left
-D′-is-bs .right = _⊕′ end-right
-D′-is-bs .leftel = ⊕′-idem (end-left)
-D′-is-bs .righter = ⊕′-idem (end-right)
-D′-is-bs .centereq = ⊕′-comm end-left end-right
+D′-is-bs = bpm-is-bs D′-is-bpm
+
+-- We can also define midpoint homomorphisms
+
+record BiPointMidpointHom {a b} (A : BiPointMidpointAlgebra a) (B : BiPointMidpointAlgebra b) : Set (lsuc (a ⊔ b)) where
+  field
+    funcM : CarrierM A → CarrierM B
+    p1-hom : funcM (p1 A) ≡ p1 B
+    p2-hom : funcM (p2 A) ≡ p2 B
+    mp-hom : ∀ x y → funcM (mp A x y) ≡ mp B (funcM x) (funcM y)
+
+open BiPointMidpointHom
 
 -- Also store homomorphisms as a record
 record BinarySystemHom {a b} (A : BinarySystem a) (B : BinarySystem b) : Set (lsuc (a ⊔ b)) where
@@ -457,14 +495,14 @@ embedD′ B (l (r x) , tt) = left B (embedD (bs-is-obs B) x)
 embedD′ B (r mid , tt) = er B
 embedD′ B (r (l x) , tt) = right B (embedD (bs-is-obs B) x)
 
-embedD′-left-hom : ∀ {b} → (B : BinarySystem b) → ∀ x → embedD′ B (x ⊕′ end-left) ≡ left B (embedD′ B x)
+embedD′-left-hom : ∀ {b} → (B : BinarySystem b) → ∀ x → embedD′ B (end-left ⊕′ x) ≡ left B (embedD′ B x)
 embedD′-left-hom B (mid , tt) = refl
 embedD′-left-hom B (l mid , tt) = leftel B
 embedD′-left-hom B (l (r x) , tt) = refl
 embedD′-left-hom B (r mid , tt) = centereq B
 embedD′-left-hom B (r (l x) , tt) = refl
 
-embedD′-right-hom : ∀ {b} → (B : BinarySystem b) → ∀ x → embedD′ B (x ⊕′ end-right) ≡ right B (embedD′ B x)
+embedD′-right-hom : ∀ {b} → (B : BinarySystem b) → ∀ x → embedD′ B (end-right ⊕′ x) ≡ right B (embedD′ B x)
 embedD′-right-hom B (mid , tt) = refl
 embedD′-right-hom B (l mid , tt) = refl
 embedD′-right-hom B (l (r x) , tt) = refl
@@ -522,3 +560,193 @@ at-most-one-hom B f g (r mid , tt) =
   func g end-right ∎
 at-most-one-hom B f g (r (l x) , tt) =
   at-most-one-open-hom (bs-is-obs B) (D′-open-hom B f) (D′-open-hom B g) (r x)
+
+-- Now we want to show D′ is the initial midpoint algebra
+
+-- any bipointed midpoint homomorphism is a binary system morphism
+bpm-hom-to-bs-hom : ∀ {a b} (A : BiPointMidpointAlgebra a) (B : BiPointMidpointAlgebra b)
+                    → BiPointMidpointHom A B → BinarySystemHom (bpm-is-bs A) (bpm-is-bs B)
+bpm-hom-to-bs-hom A B f .func = funcM f
+bpm-hom-to-bs-hom A B f .left-end-hom = p1-hom f
+bpm-hom-to-bs-hom A B f .right-end-hom = p2-hom f
+bpm-hom-to-bs-hom A B f .left-hom x =
+  funcM f (mp A (p1 A) x) ≡⟨ mp-hom f (p1 A) x ⟩
+  mp B (funcM f (p1 A)) (funcM f x) ≡⟨ cong (λ y → mp B y (funcM f x)) (p1-hom f) ⟩
+  mp B (p1 B) (funcM f x) ∎
+bpm-hom-to-bs-hom A B f .right-hom x =
+  funcM f (mp A (p2 A) x) ≡⟨ mp-hom f (p2 A) x ⟩
+  mp B (funcM f (p2 A)) (funcM f x) ≡⟨ cong (λ y → mp B y (funcM f x)) (p2-hom f) ⟩
+  mp B (p2 B) (funcM f x) ∎
+
+-- We can use this to show there is at most one bipointed midpoint homomorphism from D′
+at-most-one-bpm-hom : ∀ {a} (A : BiPointMidpointAlgebra a)
+                    → (f g : BiPointMidpointHom D′-is-bpm A)
+                    → ∀ x → funcM f x ≡ funcM g x
+at-most-one-bpm-hom A f g =
+  at-most-one-hom (bpm-is-bs A)
+                  (bpm-hom-to-bs-hom D′-is-bpm A f)
+                  (bpm-hom-to-bs-hom D′-is-bpm A g)
+
+-- Helpful distributivity lemma
+bpm-dist : ∀ {a} (A : BiPointMidpointAlgebra a)
+           → ∀ x y z → mp A x (mp A y z) ≡ mp A (mp A x y) (mp A x z)
+bpm-dist A x y z =
+  mp A x (mp A y z) ≡⟨ cong (λ a → mp A a (mp A y z)) (bpm-idem A x) ⟩
+  mp A (mp A x x) (mp A y z) ≡⟨ bpm-trans A x x y z ⟩
+  mp A (mp A x y) (mp A x z) ∎
+
+-- A crucial lemma to manipulate embedD′
+embedD′/2-is-embedD : ∀ {b} →
+                      (B : BinarySystem b) →
+                      ∀ x → embedD′ B (x /2 , inSubintervalHalfLem x) ≡ embedD (bs-is-obs B) x
+embedD′/2-is-embedD B = at-most-one-open-hom (bs-is-obs B) (D′-open-hom B (exists-hom B)) (embedD-is-hom (bs-is-obs B))
+
+-- Then we need a lemma on embedD
+
+embedD-/2-lem : ∀ {a} (A : BiPointMidpointAlgebra a)
+                → ∀ x → embedD (bs-is-obs (bpm-is-bs A)) (x /2) ≡ mp A (mp A (p2 A) (p1 A)) (embedD (bs-is-obs (bpm-is-bs A))x)
+embedD-/2-lem A mid = bpm-idem A (mp A (p2 A) (p1 A))
+embedD-/2-lem A (l x) =
+  mp A (p1 A) (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ bpm-dist A (p1 A) (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x) ⟩
+  mp A (mp A (p1 A) (p2 A))
+    (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ cong (λ a → mp A a (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x))) (bpm-comm A (p1 A) (p2 A)) ⟩
+  mp A (mp A (p2 A) (p1 A)) (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ∎
+embedD-/2-lem A (r x) = bpm-dist A (p2 A) (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)
+
+embedD-mp-hom : ∀ {a} (A : BiPointMidpointAlgebra a)
+                → ∀ x y → embedD (bs-is-obs (bpm-is-bs A)) (x ⊕ y) ≡ mp A (embedD (bs-is-obs (bpm-is-bs A)) x) (embedD (bs-is-obs (bpm-is-bs A)) y)
+embedD-mp-hom A mid mid = bpm-idem A (mp A (p2 A) (p1 A))
+embedD-mp-hom A mid (l y) =
+  mp A (p1 A)
+      (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ bpm-dist A (p1 A) (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) y) ⟩
+  mp A (mp A (p1 A) (p2 A))
+    (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ cong (λ a → mp A a (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y))) (bpm-comm A (p1 A) (p2 A)) ⟩
+  mp A (mp A (p2 A) (p1 A))
+      (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ∎
+embedD-mp-hom A mid (r y) = bpm-dist A (p2 A) (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)
+embedD-mp-hom A (l x) mid =
+  mp A (p1 A)
+    (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ bpm-dist A (p1 A) (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x) ⟩
+  mp A (mp A (p1 A) (p2 A))
+    (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ bpm-comm A (mp A (p1 A) (p2 A)) (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ⟩
+  mp A (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+    (mp A (p1 A) (p2 A)) ≡⟨ cong (mp A (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x))) (bpm-comm A (p1 A) (p2 A)) ⟩
+  mp A (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+    (mp A (p2 A) (p1 A)) ∎
+embedD-mp-hom A (l x) (l y) =
+  mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) (x ⊕ y)) ≡⟨ cong (mp A (p1 A)) (embedD-mp-hom A x y) ⟩
+  mp A (p1 A) (mp A (embedD (bs-is-obs (bpm-is-bs A)) x)
+                (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ bpm-dist A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x) (embedD (bs-is-obs (bpm-is-bs A)) y) ⟩
+  mp A (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+      (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ∎
+embedD-mp-hom A (l x) (r y) =
+  embedD (bs-is-obs (bpm-is-bs A)) ((x ⊕ y) /2) ≡⟨ embedD-/2-lem A (x ⊕ y) ⟩
+  mp A (mp A (p2 A) (p1 A)) (embedD (bs-is-obs (bpm-is-bs A)) (x ⊕ y)) ≡⟨ cong₂ (mp A) (bpm-comm A (p2 A) (p1 A)) (embedD-mp-hom A x y) ⟩
+  mp A (mp A (p1 A) (p2 A))
+    (mp A (embedD (bs-is-obs (bpm-is-bs A)) x)
+     (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ bpm-trans A (p1 A) (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x) (embedD (bs-is-obs (bpm-is-bs A)) y) ⟩
+  mp A (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+      (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ∎
+embedD-mp-hom A (r x) mid =
+  mp A (p2 A)
+      (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ bpm-dist A (p2 A) (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x) ⟩
+  mp A (mp A (p2 A) (p1 A))
+    (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ bpm-comm A (mp A (p2 A) (p1 A)) (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ⟩
+  mp A (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+      (mp A (p2 A) (p1 A)) ∎
+embedD-mp-hom A (r x) (l y) =
+  embedD (bs-is-obs (bpm-is-bs A)) ((x ⊕ y) /2) ≡⟨ embedD-/2-lem A (x ⊕ y) ⟩
+  mp A (mp A (p2 A) (p1 A)) (embedD (bs-is-obs (bpm-is-bs A)) (x ⊕ y)) ≡⟨ cong₂ (mp A) (bpm-comm A (p2 A) (p1 A)) (embedD-mp-hom A x y) ⟩
+  mp A (mp A (p1 A) (p2 A))
+    (mp A (embedD (bs-is-obs (bpm-is-bs A)) x)
+     (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ cong (λ a → mp A a (mp A (embedD (bs-is-obs (bpm-is-bs A)) x)
+     (embedD (bs-is-obs (bpm-is-bs A)) y))) (bpm-comm A (p1 A) (p2 A)) ⟩
+  mp A (mp A (p2 A) (p1 A))
+    (mp A (embedD (bs-is-obs (bpm-is-bs A)) x)
+     (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ bpm-trans A (p2 A) (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x) (embedD (bs-is-obs (bpm-is-bs A)) y) ⟩
+  mp A (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+      (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ∎
+embedD-mp-hom A (r x) (r y) =
+  mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) (x ⊕ y)) ≡⟨ cong (mp A (p2 A)) (embedD-mp-hom A x y) ⟩
+  mp A (p2 A) (mp A (embedD (bs-is-obs (bpm-is-bs A)) x)
+                (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ bpm-dist A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x) (embedD (bs-is-obs (bpm-is-bs A)) y) ⟩
+  mp A (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+      (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ∎
+
+-- We need this lemma
+embedD′-mp-hom : ∀ {a} (A : BiPointMidpointAlgebra a)
+               → ∀ x y → embedD′ (bpm-is-bs A) (x ⊕′ y) ≡ mp A (embedD′ (bpm-is-bs A) x) (embedD′ (bpm-is-bs A) y)
+embedD′-mp-hom A (mid , tt) (mid , tt) = bpm-idem A (mp A (p2 A) (p1 A))
+embedD′-mp-hom A (mid , tt) (l mid , tt) = bpm-comm A (p1 A) (mp A (p2 A) (p1 A))
+embedD′-mp-hom A (mid , tt) (l (r y) , tt) =
+  mp A (p1 A) (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ bpm-dist A (p1 A) (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) y) ⟩
+  mp A (mp A (p1 A) (p2 A)) (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ cong (λ x → mp A x ((mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)))) (bpm-comm A (p1 A) (p2 A)) ⟩
+  mp A (mp A (p2 A) (p1 A)) (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ∎
+embedD′-mp-hom A (mid , tt) (r mid , tt) = bpm-comm A (p2 A) (mp A (p2 A) (p1 A))
+embedD′-mp-hom A (mid , tt) (r (l y) , tt) = bpm-dist A (p2 A) (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)
+embedD′-mp-hom A (l mid , tt) (mid , tt) = refl
+embedD′-mp-hom A (l (r x) , tt) (mid , tt) =
+  mp A (p1 A) (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ bpm-dist A (p1 A) (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x) ⟩
+  mp A (mp A (p1 A) (p2 A)) (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ cong (λ a → mp A a (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x))) (bpm-comm A (p1 A) (p2 A)) ⟩
+  mp A (mp A (p2 A) (p1 A)) (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ bpm-comm A (mp A (p2 A) (p1 A)) (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ⟩
+  mp A (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) (mp A (p2 A) (p1 A)) ∎
+embedD′-mp-hom A (l mid , tt) (l mid , tt) = bpm-idem A (p1 A)
+embedD′-mp-hom A (l mid , tt) (l (r y) , tt) = refl
+embedD′-mp-hom A (l (r x) , tt) (l mid , tt) = bpm-comm A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) (l x))
+embedD′-mp-hom A (l (r x) , tt) (l (r y) , tt) =
+  mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) (x ⊕ y)) ≡⟨ cong (mp A (p1 A)) (embedD-mp-hom A x y) ⟩
+  mp A (p1 A)
+    (mp A (embedD (bs-is-obs (bpm-is-bs A)) x)
+     (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ bpm-dist A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x) (embedD (bs-is-obs (bpm-is-bs A)) y) ⟩
+  mp A (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+    (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ∎
+embedD′-mp-hom A (l mid , tt) (r mid , tt) = bpm-comm A (p2 A) (p1 A)
+embedD′-mp-hom A (l mid , tt) (r (l y) , tt) = refl
+embedD′-mp-hom A (l (r x) , tt) (r mid , tt) = bpm-comm A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) (l x))
+embedD′-mp-hom A (l (r x) , tt) (r (l y) , tt) =
+  embedD′ (bpm-is-bs A)
+      (((x ⊕ y) /2) /2 , inSubintervalHalfLem ((x ⊕ y) /2)) ≡⟨ embedD′/2-is-embedD (bpm-is-bs A) ((x ⊕ y) /2) ⟩
+  embedD (bs-is-obs (bpm-is-bs A)) ((x ⊕ y) /2) ≡⟨ embedD-/2-lem A (x ⊕ y) ⟩
+  mp A (mp A (p2 A) (p1 A))
+    (embedD (bs-is-obs (bpm-is-bs A)) (x ⊕ y)) ≡⟨ cong₂ (mp A) (bpm-comm A (p2 A) (p1 A)) (embedD-mp-hom A x y) ⟩
+  mp A (mp A (p1 A) (p2 A))
+    (mp A (embedD (bs-is-obs (bpm-is-bs A)) x)
+     (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ bpm-trans A (p1 A) (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x) (embedD (bs-is-obs (bpm-is-bs A)) y) ⟩
+  mp A (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+      (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ∎
+embedD′-mp-hom A (r mid , tt) (mid , tt) = refl
+embedD′-mp-hom A (r (l x) , tt) (mid , tt) =
+  mp A (p2 A) (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ bpm-dist A (p2 A) (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x) ⟩
+  mp A (mp A (p2 A) (p1 A)) (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ≡⟨ bpm-comm A (mp A (p2 A) (p1 A)) (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) ⟩
+  mp A (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x)) (mp A (p2 A) (p1 A)) ∎
+embedD′-mp-hom A (r mid , tt) (l mid , tt) = refl
+embedD′-mp-hom A (r mid , tt) (l (r y) , tt) = refl
+embedD′-mp-hom A (r (l x) , tt) (l mid , tt) = bpm-comm A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) (r x))
+embedD′-mp-hom A (r (l x) , tt) (l (r y) , tt) =
+  embedD′ (bpm-is-bs A)
+      (((x ⊕ y) /2) /2 , inSubintervalHalfLem ((x ⊕ y) /2)) ≡⟨ embedD′/2-is-embedD (bpm-is-bs A) ((x ⊕ y) /2) ⟩
+  embedD (bs-is-obs (bpm-is-bs A)) ((x ⊕ y) /2) ≡⟨ embedD-/2-lem A (x ⊕ y) ⟩
+  mp A (mp A (p2 A) (p1 A))
+    (embedD (bs-is-obs (bpm-is-bs A)) (x ⊕ y)) ≡⟨ cong (mp A (mp A (p2 A) (p1 A))) (embedD-mp-hom A x y) ⟩
+  mp A (mp A (p2 A) (p1 A))
+    (mp A (embedD (bs-is-obs (bpm-is-bs A)) x)
+     (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ bpm-trans A (p2 A) (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) x) (embedD (bs-is-obs (bpm-is-bs A)) y) ⟩
+  mp A (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+      (mp A (p1 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ∎
+embedD′-mp-hom A (r mid , tt) (r mid , tt) = bpm-idem A (p2 A)
+embedD′-mp-hom A (r mid , tt) (r (l y) , tt) = refl
+embedD′-mp-hom A (r (l x) , tt) (r mid , tt) = bpm-comm A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) (r x))
+embedD′-mp-hom A (r (l x) , tt) (r (l y) , tt) =
+  mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) (x ⊕ y)) ≡⟨ cong (mp A (p2 A)) (embedD-mp-hom A x y) ⟩
+  mp A (p2 A)
+    (mp A (embedD (bs-is-obs (bpm-is-bs A)) x)
+     (embedD (bs-is-obs (bpm-is-bs A)) y)) ≡⟨ bpm-dist A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x) (embedD (bs-is-obs (bpm-is-bs A)) y) ⟩
+  mp A (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) x))
+    (mp A (p2 A) (embedD (bs-is-obs (bpm-is-bs A)) y)) ∎
+
+exists-bpm-hom : ∀ {a} (A : BiPointMidpointAlgebra a)
+               → BiPointMidpointHom D′-is-bpm A
+exists-bpm-hom A .funcM = embedD′ (bpm-is-bs A)
+exists-bpm-hom A .p1-hom = refl
+exists-bpm-hom A .p2-hom = refl
+exists-bpm-hom A .mp-hom = embedD′-mp-hom A
